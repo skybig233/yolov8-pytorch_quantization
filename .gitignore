@@ -1,3 +1,8 @@
 *.pyc
 *.png
 *.jpg
+runs/*
+weights/*
+*.onnx
+*.pt
+*.pth

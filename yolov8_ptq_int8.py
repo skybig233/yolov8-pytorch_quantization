@@ -112,7 +112,7 @@ def load_model(weight, device):
 
 
 def prepare_model(calibrator, opt, device):
-
+    
     with open(opt.data, encoding='utf-8') as f:
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)  
         # print(data_dict)
@@ -165,7 +165,7 @@ def export_onnx(model, onnx_filename, batch_onnx, dynamic_shape, simplify, imgsz
                             input_names=['images'],
                             output_names=['output'],
                             dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'}} if dynamic_shape else None,
-                            enable_onnx_checker=False, 
+                            # enable_onnx_checker=False, 
                             do_constant_folding=True)
 
         print('ONNX export success, saved as %s' % onnx_filename)
@@ -210,7 +210,7 @@ def export_onnx(model, onnx_filename, batch_onnx, dynamic_shape, simplify, imgsz
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default=ROOT / '../ultralytics/ultralytics/cfg/datasets/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--data', type=str, default=ROOT / '../ultralytics/ultralytics/cfg/datasets/DOTAv1.yaml', help='dataset.yaml path')
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / "../ultralytics/yolov8n.pt", help='model.pt path(s)')
     parser.add_argument('--model-name', '-m', default='yolov8n', help='model name: default yolov5s')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')

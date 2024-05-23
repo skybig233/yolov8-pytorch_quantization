@@ -154,12 +154,12 @@ def prepare_model(calibrator, opt, device):
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default=ROOT / '../ultralytics/ultralytics/datasets/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default="yolov8n.pt", help='model.pt path(s)')
+    parser.add_argument('--data', type=str, default=ROOT / '../ultralytics/ultralytics/cfg/datasets/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / "../ultralytics/yolov8n.pt", help='model.pt path(s)')
     parser.add_argument('--model-name', '-m', default='yolov8n', help='model name: default yolov5s')
     parser.add_argument('--batch-size', type=int, default=32, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--device', default='1', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--workers', type=int, default=0, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
 
@@ -190,6 +190,9 @@ def evaluate_accuracy(yolo, opt):
 
 
 def sensitive_analysis(yolo, opt, data_loader, summary_file='./summary_sensitive_analysis.json'):
+    """
+    量化敏感性分析，生成json，每个单元分别是map50_calibrated，map_calibrated
+    """
     summary = quant.SummaryTool(summary_file)
 
     map50_calibrated, map_calibrated = evaluate_accuracy(yolo, opt)
@@ -209,8 +212,8 @@ def sensitive_analysis(yolo, opt, data_loader, summary_file='./summary_sensitive
     
     summary = sorted(summary.data, key=lambda x:x[0], reverse=True)
     print("Sensitive summary:")
-    for n, (map_calibrated, map50_calibrated, name) in enumerate(summary):
-        print(f"Top{n}: Using fp16 {name}, map_calibrated = {map_calibrated:.5f}")
+    for n, (map50_calibrated, map_calibrated, name) in enumerate(summary):
+        print(f"Top{n}: Using fp16 {name}, map50_calibrated = {map50_calibrated:.5f}")
 
 
 if __name__ == "__main__":

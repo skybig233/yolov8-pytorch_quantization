@@ -62,9 +62,26 @@ class enable_quantization:
         self.apply(False)
 
 
+def qyolo_calib_method():
+    # 对于激活值input而言是layerwise非对称量化，histogram mse方法
+    ## Force per tensor quantization for onnx runtime
+    quant_desc_input = QuantDescriptor(calib_method="histogram", axis=None)
+    quant_nn.QuantConv2d.set_default_quant_desc_input(quant_desc_input)
+    quant_nn.QuantMaxPool2d.set_default_quant_desc_input(quant_desc_input)
+    quant_nn.QuantLinear.set_default_quant_desc_input(quant_desc_input)
+    # 对于权重weight而言是channelwise对称量化(axis=0)，minmax方法
+    quant_desc_weight = QuantDescriptor(calib_method="max", axis=0)
+    quant_nn.QuantConv2d.set_default_quant_desc_weight(quant_desc_weight)
+    # quant_nn.QuantMaxPool2d.set_default_quant_desc_weight(quant_desc_weight)
+    quant_nn.QuantLinear.set_default_quant_desc_weight(quant_desc_weight)
+    quant_logging.set_verbosity(quant_logging.ERROR)
+    return
+
 # Initialize PyTorch Quantization
 def initialize_calib_method(per_channel_quantization=True, calib_method="histogram"):
     ## Initialize quantization, model and data loaders
+
+    
     if per_channel_quantization:
         quant_desc_input = QuantDescriptor(calib_method=calib_method)
         quant_nn.QuantConv2d.set_default_quant_desc_input(quant_desc_input)
@@ -73,6 +90,7 @@ def initialize_calib_method(per_channel_quantization=True, calib_method="histogr
         quant_logging.set_verbosity(quant_logging.ERROR)
 
     else:
+        # 对于激活值input而言是layerwise，对于权重而言是channelwise
         ## Force per tensor quantization for onnx runtime
         quant_desc_input = QuantDescriptor(calib_method=calib_method, axis=None)
         quant_nn.QuantConv2d.set_default_quant_desc_input(quant_desc_input)
@@ -81,7 +99,7 @@ def initialize_calib_method(per_channel_quantization=True, calib_method="histogr
 
         quant_desc_weight = QuantDescriptor(calib_method=calib_method, axis=None)
         quant_nn.QuantConv2d.set_default_quant_desc_weight(quant_desc_weight)
-        quant_nn.QuantMaxPool2d.set_default_quant_desc_weight(quant_desc_weight)
+        # quant_nn.QuantMaxPool2d.set_default_quant_desc_weight(quant_desc_weight)
         quant_nn.QuantLinear.set_default_quant_desc_weight(quant_desc_weight)
         quant_logging.set_verbosity(quant_logging.ERROR)
 
@@ -129,12 +147,17 @@ def replace_to_quantization_module(model: torch.nn.Module, ignore_policy: List[s
             recursive_and_replace_module(submodule, path)
             submodule_id = id(type(submodule))
             if submodule_id in module_dict:
+                # 如果该层被忽略（敏感层）则不进行量化
                 if ignore_policy is not None and path in ignore_policy:
                     continue
-
+                # 否则进行量化
                 module._modules[name] = transfer_torch_to_quantization(submodule, module_dict[submodule_id])
 
     recursive_and_replace_module(model)
             
-
-    
+# 查看模型量化参数
+def quantizer_state(module):
+    print("模型量化器信息如下：")
+    for name, module in module.named_modules():
+        if isinstance(module, quant_nn.TensorQuantizer):
+            print(name, module)    
